@@ -1,6 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 const locales = ['mn', 'en'];
 const defaultLocale = 'mn';
 
@@ -8,7 +10,6 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api(.*)',
-  // Add other public routes if needed
 ]);
 
 // CORS headers for mobile app access
@@ -26,7 +27,6 @@ export default clerkMiddleware(async (auth, req) => {
     if (req.method === 'OPTIONS') {
       return new NextResponse(null, { status: 200, headers: corsHeaders });
     }
-    // For other API requests, add CORS headers to response
     const response = NextResponse.next();
     Object.entries(corsHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);
@@ -34,33 +34,31 @@ export default clerkMiddleware(async (auth, req) => {
     return response;
   }
 
-  // 1. Check if the path excludes specific files/api
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.includes('.')
-  ) {
-    return; // Let Clerk/Next handle it
+  // Protect non-public routes (Clerk auth enforcement)
+  if (!isPublicRoute(req)) {
+    await auth.protect();
   }
 
-  // 2. Check if pathname already has locale
+  // Check if pathname already has a locale prefix
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
   if (pathnameHasLocale) {
-    // Let Clerk handle authentication for locale routes
-    return;
+    return NextResponse.next();
   }
 
-  // 3. Redirect if no locale
-  const locale = defaultLocale;
-  const newUrl = new URL(`/${locale}${pathname === '/' ? '' : pathname}`, req.url);
+  // Redirect to default locale if missing
+  const newUrl = new URL(
+    `/${defaultLocale}${pathname === '/' ? '' : pathname}`,
+    req.url
+  );
   return NextResponse.redirect(newUrl);
 });
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
+    // Skip Next.js internals and static files
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     // Always run for API routes
     '/(api|trpc)(.*)',
