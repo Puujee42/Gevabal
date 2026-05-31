@@ -8,7 +8,6 @@ import dynamic from 'next/dynamic'
 import { AuthProvider } from '@/contexts/AuthContext'
 import SmoothScroll from '../components/SmoothScroll'
 import Navbar from '../components/Navbar'
-import CapacitorInitWrapper from '../capacitor/CapacitorInitWrapper'
 
 const Footer = dynamic(() => import('../components/Footer'))
 const SplashScreen = dynamic(() => import('../components/SplashScreen'))
@@ -76,7 +75,6 @@ export default async function RootLayout({
             </head>
             <body className={`${playfair.variable} ${lato.variable} font-sans overflow-x-hidden`}>
               <ThemeProvider attribute="class" forcedTheme="light" defaultTheme="light" enableSystem={false}>
-                <CapacitorInitWrapper />
                 <SmoothScroll />
                 <Navbar />
                 <SplashScreen />

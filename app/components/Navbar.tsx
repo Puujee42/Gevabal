@@ -21,8 +21,6 @@ import { useTheme } from "next-themes";
 import { UserButton } from "@clerk/nextjs";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePlatform } from "@/app/capacitor/hooks/usePlatform";
-import { hapticsLight, hapticsMedium } from "@/app/capacitor/plugins/haptics";
 
 const CONTENT = {
   logo: { mn: "Гэвабaл", en: "Gevabal" },
@@ -40,7 +38,9 @@ export default function OverlayNavbar() {
   const { scrollY } = useScroll();
   const { user, logout } = useAuth();
   const router = useRouter();
-  const { isNative, safeArea } = usePlatform();
+  
+  const isNative = false;
+  const safeArea = { top: 0, bottom: 0, left: 0, right: 0 };
 
   useEffect(() => setMounted(true), []);
 
@@ -58,10 +58,6 @@ export default function OverlayNavbar() {
   };
 
   const toggleLanguage = async () => {
-    // Haptic feedback on native platforms
-    if (isNative) {
-      await hapticsLight();
-    }
     const nextLang = lang === "mn" ? "en" : "mn";
     switchLocale(nextLang);
   };
@@ -229,18 +225,11 @@ export default function OverlayNavbar() {
             {mobileNav.filter(item => !item.auth || user).map((item) => {
               const isActive = getIsActive(item.href);
 
-              const handleTap = async () => {
-                if (isNative) {
-                  await hapticsLight();
-                }
-              };
-
               return (
                 <LocalizedLink
                   key={item.id}
                   href={item.href}
                   className="flex-1 flex flex-col items-center justify-center py-3 relative group min-w-[60px]"
-                  onClick={handleTap}
                 >
                   {isActive && (
                     <motion.div
